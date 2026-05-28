@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeAgro · Decision Engine v7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================
+   RESET & VARIÁVEIS
+   ============================================ */
+:root {
+  --bg-base: #060608;
+  --bg-surface: #0c0c12;
+  --bg-surface-2: #111118;
+  --bg-surface-3: #16161f;
+  
+  --green: #00e676;
+  --green-dim: rgba(0, 230, 118, 0.1);
+  --blue: #4488ff;
+  --blue-dim: rgba(68, 136, 255, 0.1);
+  --cyan: #00bcd4;
+  --cyan-dim: rgba(0, 188, 212, 0.1);
+  --amber: #ffb300;
+  --amber-dim: rgba(255, 179, 0, 0.1);
+  --red: #ff4466;
+  --red-dim: rgba(255, 68, 102, 0.1);
+  --purple: #aa77ff;
+  --purple-dim: rgba(170, 119, 255, 0.1);
+  
+  --text-1: #f0f0f8;
+  --text-2: #a0a0b8;
+  --text-3: #606070;
+  
+  --border: #22222e;
+  --border-bright: #333344;
+  
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'IBM Plex Sans', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-1);
+  font-family: var(--font-display);
+}
+
+/* ============================================
+   LOADER STYLES
+   ============================================ */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  25% { transform: translateY(-20px) translateX(10px); }
+  50% { transform: translateY(-40px) translateX(0px); }
+  75% { transform: translateY(-20px) translateX(-10px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); }
+  50% { box-shadow: 0 0 30px rgba(0, 230, 118, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(50px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-50px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes scaleIn {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes wavePulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes progress-fill {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+
+.blockchain-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #060608 0%, #0c0c12 50%, #16161f 100%);
+  z-index: 9999;
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+  opacity: 1;
+  visibility: visible;
+}
+
+.blockchain-loader.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-bg-elements {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  overflow: hidden;
+}
+
+.bg-circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.05;
+}
+
+.bg-circle-1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, var(--green), transparent);
+  top: -150px;
+  right: -150px;
+  animation: float 20s ease-in-out infinite;
+}
+
+.bg-circle-2 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, var(--blue), transparent);
+  bottom: -100px;
+  left: -100px;
+  animation: float 25s ease-in-out infinite reverse;
+}
+
+.bg-circle-3 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, var(--cyan), transparent);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: float 30s ease-in-out infinite;
+}
+
+.loader-content {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  max-width: 700px;
+  width: 95%;
+}
+
+.loader-header {
+  margin-bottom: 50px;
+  animation: slideDown 1s ease;
+}
+
+.logo-animation {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, var(--green), var(--cyan), var(--blue), var(--purple));
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 900;
+  color: #060608;
+  box-shadow: 0 0 50px rgba(0, 230, 118, 0.3);
+  animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  letter-spacing: 2px;
+}
+
+.title-main {
+  font-size: 48px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--text-1), var(--text-2), var(--green));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 12px;
+  letter-spacing: -1px;
+  animation: slideUp 1s ease 0.2s both;
+}
+
+.subtitle-main {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  animation: slideUp 1s ease 0.4s both;
+}
+
+.tagline {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  letter-spacing: 1px;
+  animation: fadeIn 1s ease 0.6s both;
+}
+
+.network-showcase {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin: 48px 0;
+  animation: slideUp 1s ease 0.3s both;
+}
+
+.network-icon-box {
+  width: 80px;
+  height: 80px;
+  background: var(--bg-surface-2);
+  border: 2px solid var(--border-bright);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.network-icon-box::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(0, 230, 118, 0.3), transparent);
+  animation: shimmer 3s infinite;
+}
+
+.network-icon-box.active {
+  border-color: var(--green);
+  box-shadow: 0 0 25px rgba(0, 230, 118, 0.4);
+  animation: glow 2s ease-in-out infinite;
+}
+
+.blocks-section {
+  margin: 48px 0;
+  animation: slideUp 1s ease 0.4s both;
+}
+
+.blocks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.blockchain-block {
+  background: linear-gradient(135deg, var(--bg-surface-2), var(--bg-surface-3));
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  opacity: 0.6;
+}
+
+.blockchain-block.connecting {
+  border-color: var(--amber);
+  background: linear-gradient(135deg, rgba(255, 179, 0, 0.08), rgba(255, 179, 0, 0.04));
+  opacity: 1;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.blockchain-block.connected {
+  border-color: var(--green);
+  background: linear-gradient(135deg, rgba(0, 230, 118, 0.08), rgba(0, 230, 118, 0.04));
+  opacity: 1;
+  box-shadow: 0 0 25px rgba(0, 230, 118, 0.25);
+  transform: translateY(-4px);
+}
+
+.block-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.block-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  color: var(--text-1);
+}
+
+.blockchain-block.connecting .block-title {
+  color: var(--amber);
+}
+
+.blockchain-block.connected .block-title {
+  color: var(--green);
+}
+
+.block-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.block-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.blockchain-block.connecting .block-dot {
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  animation: wavePulse 1.5s ease-in-out infinite;
+}
+
+.blockchain-block.connected .block-dot {
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  animation: wavePulse 2s ease-in-out infinite;
+}
+
+.loader-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  max-width: 500px;
+  margin: 32px auto;
+  padding: 0 20px;
+}
+
+.stat-box {
+  background: linear-gradient(135deg, var(--bg-surface-2), var(--bg-surface-3));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  animation: slideUp 1s ease 0.5s both;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 6px;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.progress-container {
+  max-width: 500px;
+  margin: 32px auto;
+  padding: 0 20px;
+  animation: slideUp 1s ease 0.6s both;
+}
+
+.progress-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-2);
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-surface-3);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--cyan), var(--blue), var(--green));
+  border-radius: 10px;
+  animation: progress-fill 4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+}
+
+.loader-message {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-2);
+  margin-top: 24px;
+  min-height: 40px;
+  animation: slideUp 1s ease 0.7s both;
+  text-align: center;
+}
+
+.loader-complete {
+  animation: slideDown 0.6s ease;
+  margin-bottom: 24px;
+}
+
+.complete-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.complete-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: 1px;
+}
+
+.loader-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  justify-content: center;
+  animation: slideUp 1s ease 0.8s both;
+}
+
+.action-btn {
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  color: #060608;
+  box-shadow: 0 4px 20px rgba(0, 230, 118, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 30px rgba(0, 230, 118, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* ============================================
+   SITE CONTENT STYLES
+   ============================================ */
+.site-container {
+  display: none;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-base);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.site-container.visible {
+  display: block;
+  opacity: 1;
+}
+
+.header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 32px;
+}
+
+.header-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--green), var(--cyan));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  color: #060608;
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--text-1), var(--text-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s infinite;
+}
+
+.header-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  letter-spacing: 1px;
+}
+
+.header-badge {
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.nav {
+  background: var(--bg-surface-2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  padding: 14px 24px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-btn:hover {
+  color: var(--text-1);
+}
+
+.nav-btn.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--text-1), var(--text-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 8px;
+}
+
+.page-sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.card {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-1);
+}
+
+.metric {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.metric-item {
+  background: var(--bg-surface-3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--green);
+  font-family: var(--font-mono);
+  margin-bottom: 8px;
+}
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+footer {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 28px 32px;
+  text-align: center;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+@media (max-width: 768px) {
+  .header-inner {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .page {
+    padding: 16px;
+  }
+  
+  .nav {
+    padding: 0 16px;
+    overflow-x: auto;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================
+     BLOCKCHAIN LOADER
+     ============================================ -->
+<div class="blockchain-loader" id="loaderContainer">
+ <div class="loader-bg-elements">
+  
+  </div>
+
+  <div class="loader-content">
+    <div class="loader-header">
+  <div class="logo-animation" id="logoAnimation"></div>
+      <div class="title-main">DeAgro Engine</div>
+      <div class="subtitle-main">Web3 Decision Engine</div>
+      <div class="tagline">Conectando ao blockchain...</div>
+    </div>
+
+    
+
+    <div class="blocks-section">
+      <div class="blocks-grid">
+        <div class="blockchain-block connecting" id="block1">
+          <div>
+            <div class="block-label">Camada 1</div>
+            <div class="block-title">Ethereum</div>
+          </div>
+          <div class="block-status">
+            <span class="block-dot"></span>
+            <span id="blockStatus1">Conectando...</span>
+          </div>
+        </div>
+
+        <div class="blockchain-block" id="block2">
+          <div>
+            <div class="block-label">Camada 2</div>
+            <div class="block-title">Arbitrum</div>
+          </div>
+          <div class="block-status">
+            <span class="block-dot"></span>
+            <span id="blockStatus2">Aguardando...</span>
+          </div>
+        </div>
+
+        <div class="blockchain-block" id="block3">
+          <div>
+            <div class="block-label">Oracle</div>
+            <div class="block-title">Chainlink</div>
+          </div>
+          <div class="block-status">
+            <span class="block-dot"></span>
+            <span id="blockStatus3">Aguardando...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loader-stats">
+      <div class="stat-box">
+        <div class="stat-value" id="blockHeight">0</div>
+        <div class="stat-label">Block Height</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="gasPrice">45</div>
+        <div class="stat-label">Gas (Gwei)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="tpsCount">250</div>
+        <div class="stat-label">TPS</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="connectedCount">0/3</div>
+        <div class="stat-label">Conectado</div>
+      </div>
+    </div>
+
+    <div class="progress-container">
+      <div class="progress-label">
+        <span>Sincronização em tempo real</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar"></div>
+    </div>
+
+    <div class="loader-message" id="loaderMessage">
+      <div id="messageLine">Inicializando protocolo Web3...</div>
+    </div>
+
+    <div class="loader-actions">
+     
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     SITE CONTENT
+     ============================================ -->
+<div class="site-container" id="siteContainer">
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo-mark">
+        
+        <div class="logo-text">DEAGRO</div>
+      </div>
+      <div class="header-meta">
+        <div class="status-dot"></div>
+        <span class="header-label">SISTEMA OPERACIONAL</span>
+        <span class="header-badge">FOUNDER MODE v7</span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav">
+    <button class="nav-btn active">Dashboard</button>
+    <button class="nav-btn">Simulador</button>
+    <button class="nav-btn">Blockchain</button>
+    <button class="nav-btn">Tokens</button>
+    <button class="nav-btn">Análise</button>
+  </nav>
+
+  <main class="page">
+    <div class="page-title">Dashboard Estratégico</div>
+    <div class="page-sub">Engine de decisão em tempo real · Sistema 100% Web3</div>
+
+    <div class="card">
+      <div class="card-title"> Unit Economics</div>
+      <div class="metric">
+        <div class="metric-item">
+          <div class="metric-value" id="tvlValue">$5.0M</div>
+          <div class="metric-label">TVL Total</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value" id="revenueValue">$125K</div>
+          <div class="metric-label">Receita Anual</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value" id="costValue">$7.5K</div>
+          <div class="metric-label">Custo On-Chain</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value" id="marginValue">94.0%</div>
+          <div class="metric-label">Margem Op.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"> Configuração</div>
+      <div class="metric">
+        <div class="metric-item">
+          <div class="metric-value">Ethereum</div>
+          <div class="metric-label">Rede L1</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">Arbitrum</div>
+          <div class="metric-label">Rede L2</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">Chainlink</div>
+          <div class="metric-label">Oracle</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-value">100%</div>
+          <div class="metric-label">On-Chain</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Score de Investimento</div>
+      <div style="margin: 20px 0;">
+        <div style="font-family: var(--font-mono); font-size: 14px; color: var(--text-2); margin-bottom: 12px;">
+          Score: <span style="color: var(--green); font-weight: 700;">84/100</span>
+        </div>
+        <div style="height: 8px; background: var(--bg-surface-3); border-radius: 10px; overflow: hidden;">
+          <div style="height: 100%; background: linear-gradient(90deg, var(--green), var(--cyan)); width: 84%;"></div>
+        </div>
+      </div>
+      <div style="color: var(--text-2); font-size: 14px; margin-top: 16px;">
+        ✅ Alta atratividade de investimento. Custo operacional 62% abaixo do benchmark. Sistema pronto para produção.
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    DeAgro Decision Engine v7 · Founder Mode · Powered by Ethereum + Arbitrum + Chainlink
+  </footer>
+</div>
+
+<script>
+// ============================================
+// BLOCKCHAIN LOADER EPIC
+// ============================================
+
+class BlockchainLoaderEpic {
+  constructor() {
+    this.blockHeight = 19245820;
+    this.gasPrice = 35;
+    this.tpsValue = 250;
+    this.connectedCount = 0;
+    this.totalConnections = 3;
+    this.progressValue = 0;
+    this.blocks = ['block1', 'block2', 'block3'];
+    this.networkIcons = ['iconEth', 'iconArb', 'iconChain'];
+    this.messages = [
+      'Inicializando protocolo Web3...',
+      'Verificando smart contracts...',
+      'Carregando dados da rede...',
+      'Sincronizando estado on-chain...',
+      'Ativando Oracles Chainlink...',
+      'Finalizando conexão segura...',
+      'Pronto para começar! 🚀'
+    ];
+    this.messageIndex = 0;
+  }
+
+  async init() {
+    console.log('🚀 DeAgro Blockchain Loader - Iniciando...');
+    
+    this.startRealTimeUpdates();
+    this.startBlockChainConnection();
+    this.setupButtonListeners();
+  }
+
+  startRealTimeUpdates() {
+    setInterval(() => {
+      this.updateBlockHeight();
+      this.updateGasPrice();
+      this.updateTPS();
+      this.updateMessage();
+    }, 800);
+  }
+
+  updateBlockHeight() {
+    this.blockHeight += Math.floor(Math.random() * 5) + 1;
+    const el = document.getElementById('blockHeight');
+    if (el) el.textContent = this.blockHeight.toLocaleString();
+  }
+
+  updateGasPrice() {
+    this.gasPrice = Math.max(20, Math.min(100, this.gasPrice + (Math.random() - 0.5) * 15));
+    const el = document.getElementById('gasPrice');
+    if (el) el.textContent = Math.round(this.gasPrice);
+  }
+
+  updateTPS() {
+    this.tpsValue = Math.round(200 + Math.random() * 100);
+    const el = document.getElementById('tpsCount');
+    if (el) el.textContent = this.tpsValue;
+  }
+
+  updateMessage() {
+    if (this.messageIndex < this.messages.length) {
+      const el = document.getElementById('messageLine');
+      if (el) el.textContent = this.messages[this.messageIndex];
+      this.messageIndex++;
+    }
+  }
+
+  async startBlockChainConnection() {
+    for (let i = 0; i < this.blocks.length; i++) {
+      await this.connectBlock(i);
+      await this.sleep(1200);
+    }
+
+    this.activateNetworkIcons();
+    await this.sleep(1500);
+    this.showCompletion();
+  }
+
+  async connectBlock(index) {
+    const blockEl = document.getElementById(this.blocks[index]);
+    const statusEl = document.getElementById(`blockStatus${index + 1}`);
+    
+    if (!blockEl) return;
+
+    blockEl.classList.remove('connecting');
+    blockEl.classList.add('connected');
+    
+    if (statusEl) {
+      statusEl.textContent = 'Conectado ✓';
+    }
+
+    this.connectedCount++;
+    this.updateConnectedCount();
+    this.updateProgress();
+  }
+
+  updateConnectedCount() {
+    const el = document.getElementById('connectedCount');
+    if (el) el.textContent = `${this.connectedCount}/${this.totalConnections}`;
+  }
+
+  updateProgress() {
+    this.progressValue = (this.connectedCount / this.totalConnections) * 100;
+    const el = document.getElementById('progressPercent');
+    if (el) el.textContent = Math.round(this.progressValue) + '%';
+  }
+
+  activateNetworkIcons() {
+    this.networkIcons.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (el) {
+        setTimeout(() => {
+          el.classList.add('active');
+        }, i * 300);
+      }
+    });
+  }
+
+  showCompletion() {
+    const logoEl = document.getElementById('logoAnimation');
+    if (logoEl) {
+      logoEl.style.animation = 'pulse 1s ease infinite';
+      setTimeout(() => {
+        sessionStorage.setItem('loaderShown', 'true');
+        window.location.href = 'index.html';
+    }, 2000); // 2 segundos após mostrar "Sistema Pronto"
+}
+    
+
+    const msgEl = document.getElementById('loaderMessage');
+    if (msgEl) {
+      msgEl.innerHTML = `
+        <div class="loader-complete">
+          <div class="complete-icon"></div>
+          <div class="complete-text"></div>
+          <div style="font-size: 11px; color: var(--text-2); margin-top: 8px;"></div>
+        </div>
+      `;
+    }
+  }
+
+  setupButtonListeners() {
+    document.getElementById('continueBtn')?.addEventListener('click', () => {
+      this.transitionToSite();
+    });
+  }
+
+  transitionToSite() {
+    const loader = document.getElementById('loaderContainer');
+    const site = document.getElementById('siteContainer');
+    
+    if (loader) {
+      loader.classList.add('hidden');
+    }
+    
+    setTimeout(() => {
+      if (site) {
+        site.classList.add('visible');
+      }
+    }, 100);
+  }
+
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+// Inicializa quando o documento estiver pronto
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const loader = new BlockchainLoaderEpic();
+    loader.init();
+  });
+} else {
+  const loader = new BlockchainLoaderEpic();
+  loader.init();
+}
+</script>
+
+</body>
+</html>

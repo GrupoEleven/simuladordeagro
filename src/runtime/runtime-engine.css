@@ -1,0 +1,899 @@
+/* ============================================================================
+   DEAGRO RUNTIME ENGINE - CINEMATIC STYLES
+   ============================================================================ */
+
+/* ============================================================================
+   PACKET ANIMATIONS
+   ============================================================================ */
+
+@keyframes packetFlow {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(100%) translateY(-100%);
+    opacity: 0;
+  }
+}
+
+@keyframes packetPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(68, 136, 255, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(68, 136, 255, 0.9);
+  }
+}
+
+@keyframes batchGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(0, 230, 118, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 16px rgba(0, 230, 118, 0.8));
+  }
+}
+
+@keyframes stageProgress {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@keyframes nodePulse {
+  0%, 100% {
+    r: 6px;
+    filter: drop-shadow(0 0 4px rgba(0, 230, 118, 0.4));
+  }
+  50% {
+    r: 8px;
+    filter: drop-shadow(0 0 12px rgba(0, 230, 118, 0.9));
+  }
+}
+
+@keyframes executionRipple {
+  0% {
+    r: 2px;
+    opacity: 1;
+  }
+  100% {
+    r: 40px;
+    opacity: 0;
+  }
+}
+
+@keyframes lineFlow {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes scalePressure {
+  0%, 100% {
+    transform: scaleY(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleY(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes queueBuild {
+  from {
+    height: 0;
+  }
+  to {
+    height: 100%;
+  }
+}
+
+@keyframes dataPoint {
+  0%, 100% {
+    r: 3px;
+  }
+  50% {
+    r: 5px;
+  }
+}
+
+/* ============================================================================
+   RUNTIME ENGINE LAYOUT
+   ============================================================================ */
+
+.runtime-engine {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  background: linear-gradient(135deg, var(--surface-0) 0%, var(--surface-1) 100%);
+  overflow-y: auto;
+}
+
+.runtime-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.runtime-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.runtime-status {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+}
+
+.runtime-status-live {
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 8px var(--green);
+}
+
+/* ============================================================================
+   METRICS GRID
+   ============================================================================ */
+
+.runtime-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.metric-widget {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.metric-widget::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--blue), transparent);
+  animation: lineFlow 3s infinite;
+}
+
+.metric-widget:hover {
+  border-color: var(--border-bright);
+  box-shadow: var(--shadow-md);
+}
+
+.metric-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-sm);
+  display: block;
+}
+
+.metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--spacing-xs);
+  color: var(--blue);
+}
+
+.metric-sub {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.metric-trend {
+  display: inline-block;
+  font-size: 12px;
+  margin-top: var(--spacing-xs);
+}
+
+.metric-trend.up {
+  color: var(--green);
+}
+
+.metric-trend.down {
+  color: var(--red);
+}
+
+/* ============================================================================
+   BATCHING VISUALIZER
+   ============================================================================ */
+
+.batching-container {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.batch-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-lg);
+}
+
+.batch-flow {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: stretch;
+  position: relative;
+  height: 180px;
+}
+
+.batch-stage {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-base);
+}
+
+.batch-stage.active {
+  background: var(--blue-mid);
+  border-color: var(--blue);
+  box-shadow: 0 0 16px rgba(68, 136, 255, 0.3);
+}
+
+.batch-stage.completed {
+  background: var(--green-mid);
+  border-color: var(--green);
+}
+
+.batch-stage-name {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-1);
+}
+
+.batch-stage-count {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.batch-stage-sub {
+  font-size: 10px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.batch-arrow {
+  position: absolute;
+  right: -var(--spacing-lg);
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--spacing-lg);
+  height: 2px;
+  background: linear-gradient(90deg, var(--blue), transparent);
+  animation: lineFlow 2s infinite;
+  z-index: 10;
+}
+
+.batch-queue {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-lg);
+}
+
+.queue-item {
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--text-3);
+  transition: all var(--transition-fast);
+  animation: packetPulse 2s infinite;
+}
+
+.queue-item:hover {
+  border-color: var(--blue);
+  background: var(--blue-mid);
+}
+
+.queue-item.pending {
+  background: var(--amber-mid);
+  border-color: var(--amber);
+}
+
+.queue-item.executing {
+  background: var(--blue-mid);
+  border-color: var(--blue);
+  animation: packetPulse 0.6s infinite;
+}
+
+.queue-item.settled {
+  background: var(--green-mid);
+  border-color: var(--green);
+}
+
+/* ============================================================================
+   SMART CONTRACT EXECUTOR
+   ============================================================================ */
+
+.execution-stages {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.execution-stage-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-lg);
+  border-bottom: 1px solid var(--border);
+}
+
+.execution-stage-row:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.stage-number {
+  width: 40px;
+  height: 40px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--text-1);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.stage-number.active {
+  background: var(--blue-mid);
+  border-color: var(--blue);
+  box-shadow: 0 0 12px rgba(68, 136, 255, 0.5);
+}
+
+.stage-number.completed {
+  background: var(--green-mid);
+  border-color: var(--green);
+}
+
+.stage-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.stage-name {
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: var(--spacing-xs);
+}
+
+.stage-description {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-md);
+}
+
+.stage-progress-bar {
+  height: 4px;
+  background: var(--surface-3);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.stage-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--cyan));
+  border-radius: 2px;
+  animation: stageProgress 2s ease-out forwards;
+}
+
+.stage-metrics {
+  display: flex;
+  gap: var(--spacing-md);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.stage-metric {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.stage-duration {
+  color: var(--cyan);
+}
+
+.stage-gas {
+  color: var(--amber);
+}
+
+/* ============================================================================
+   SCALE STRESS TEST
+   ============================================================================ */
+
+.scale-stress-container {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.stress-slider {
+  margin-bottom: var(--spacing-xl);
+}
+
+.slider-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.slider-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--blue);
+}
+
+input[type='range'] {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--blue);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(68, 136, 255, 0.6);
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--blue);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px rgba(68, 136, 255, 0.6);
+}
+
+.pressure-indicators {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.pressure-indicator {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pressure-name {
+  font-size: 10px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-xs);
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+.pressure-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface-3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: var(--spacing-sm);
+}
+
+.pressure-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--amber), var(--red));
+  animation: scalePressure 1s infinite;
+}
+
+.pressure-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.pressure-sub {
+  font-size: 10px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+/* ============================================================================
+   TOKEN STANDARD SELECTOR
+   ============================================================================ */
+
+.token-standards-container {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.standards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.standard-card {
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.standard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, currentColor, transparent);
+  opacity: 0;
+  animation: lineFlow 2s infinite;
+  transition: opacity var(--transition-base);
+}
+
+.standard-card:hover {
+  border-color: var(--border-bright);
+  background: var(--surface-3);
+  box-shadow: var(--shadow-md);
+}
+
+.standard-card.active {
+  border-color: var(--blue);
+  background: var(--blue-mid);
+  box-shadow: 0 0 16px rgba(68, 136, 255, 0.3);
+}
+
+.standard-card.active::before {
+  opacity: 1;
+}
+
+.standard-name {
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: var(--spacing-xs);
+  font-size: 14px;
+}
+
+.standard-description {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-md);
+  line-height: 1.4;
+}
+
+.standard-gas {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-sm);
+}
+
+.standard-advantages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.advantage-tag {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 9px;
+  color: var(--text-3);
+}
+
+/* ============================================================================
+   ETHEREUM COST MONITOR
+   ============================================================================ */
+
+.gas-monitor-container {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.gas-prices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.gas-price-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.gas-chain {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-3);
+}
+
+.gas-price {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.gas-unit {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.gas-update {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-4);
+  margin-top: var(--spacing-sm);
+}
+
+/* ============================================================================
+   UNIT ECONOMICS PANEL
+   ============================================================================ */
+
+.unit-economics-container {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.economics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.economics-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.economics-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+  margin-bottom: var(--spacing-sm);
+}
+
+.economics-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--spacing-xs);
+}
+
+.economics-change {
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.economics-change.positive {
+  color: var(--green);
+}
+
+.economics-change.negative {
+  color: var(--red);
+}
+
+/* ============================================================================
+   CONTROL CENTER
+   ============================================================================ */
+
+.control-center {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-xl);
+  margin-bottom: var(--spacing-xl);
+}
+
+.control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.control-input {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.control-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-3);
+}
+
+.control-field {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.control-field input,
+.control-field select {
+  flex: 1;
+}
+
+.button-group {
+  display: flex;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.button-group button {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* ============================================================================
+   PARTICLES & BACKGROUND
+   ============================================================================ */
+
+.particle-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  animation: float 4s ease-in-out infinite;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+
+@media (max-width: 768px) {
+  .runtime-engine {
+    padding: var(--spacing-lg);
+  }
+
+  .runtime-title {
+    font-size: 20px;
+  }
+
+  .batch-flow {
+    flex-direction: column;
+    height: auto;
+    gap: var(--spacing-md);
+  }
+
+  .batch-arrow {
+    display: none;
+  }
+
+  .standards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pressure-indicators {
+    grid-template-columns: 1fr;
+  }
+}

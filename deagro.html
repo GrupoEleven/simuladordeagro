@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DeAgro · Simulador Completo com Arquitetura Core</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base: #060608;
+  --bg-surface: #0d0d12;
+  --bg-surface-2: #12121a;
+  --bg-surface-3: #181820;
+  --bg-surface-4: #22222e;
+  --text-1: #f0f0f8;
+  --text-2: #b0b0c0;
+  --text-3: #707080;
+  --border: #22222e;
+  --border-bright: #3a3a4a;
+  --green: #00e676;
+  --green-dim: rgba(0,230,118,0.12);
+  --red: #ff4d4d;
+  --red-dim: rgba(255,77,77,0.12);
+  --amber: #ffb300;
+  --amber-dim: rgba(255,179,0,0.12);
+  --blue: #4488ff;
+  --blue-dim: rgba(68,136,255,0.12);
+  --cyan: #00bcd4;
+  --purple: #aa77ff;
+  --purple-dim: rgba(170,119,255,0.12);
+  --coinbase: #0052FF;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'IBM Plex Sans', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg-base); color:var(--text-1); font-family:var(--font-display); line-height:1.5; -webkit-font-smoothing:antialiased; }
+
+.header { border-bottom:1px solid var(--border); background:rgba(6,6,8,0.95); backdrop-filter:blur(10px); position:sticky; top:0; z-index:100; }
+.header-inner { max-width:1600px; margin:0 auto; padding:20px 40px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+.logo-text { font-size:28px; font-weight:700; letter-spacing:-0.5px; background:linear-gradient(135deg,#00e676,#0052FF); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.status-indicator { display:flex; align-items:center; gap:8px; padding:8px 16px; background:var(--bg-surface-3); border-radius:20px; border:1px solid var(--border-bright); }
+.status-dot { width:12px; height:12px; background:var(--green); border-radius:50%; box-shadow:0 0 8px var(--green); animation:pulse 1.8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.status-text { font-family:var(--font-mono); font-size:11px; letter-spacing:1px; }
+
+.nav { border-bottom:1px solid var(--border); background:var(--bg-surface); position:sticky; top:70px; z-index:99; }
+.nav-inner { max-width:1600px; margin:0 auto; padding:0 40px; display:flex; gap:8px; overflow-x:auto; }
+.nav-btn { background:transparent; border:none; padding:14px 24px; font-family:var(--font-mono); font-size:12px; font-weight:500; color:var(--text-3); cursor:pointer; transition:all 0.2s; border-bottom:2px solid transparent; white-space:nowrap; }
+.nav-btn:hover { color:var(--text-1); background:var(--bg-surface-2); }
+.nav-btn.active { color:var(--green); border-bottom-color:var(--green); }
+
+.page { max-width:1600px; margin:0 auto; padding:40px; }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; animation:fade 0.3s ease; }
+@keyframes fade { from{opacity:0;} to{opacity:1;} }
+
+.page-header { margin-bottom:32px; }
+.page-title { font-size:32px; font-weight:700; letter-spacing:-0.5px; margin-bottom:6px; }
+.page-sub { font-family:var(--font-mono); font-size:12px; color:var(--text-3); letter-spacing:0.5px; }
+
+/* ARQUITETURA CORE STYLES */
+.architecture-intro { background:linear-gradient(135deg,var(--bg-surface-2),var(--bg-surface-3)); border:1px solid var(--border); border-radius:20px; padding:32px; margin-bottom:40px; }
+.intro-title { font-size:24px; font-weight:700; margin-bottom:16px; color:var(--cyan); }
+.intro-text { font-size:14px; color:var(--text-2); line-height:1.8; max-width:900px; margin-bottom:20px; }
+.intro-highlight { padding:12px 16px; background:var(--green-dim); border-left:3px solid var(--green); border-radius:8px; font-size:13px; color:var(--green); font-weight:500; }
+
+.contract-flow { background:var(--bg-surface); border:1px solid var(--border); border-radius:20px; padding:40px; margin-bottom:40px; overflow-x:auto; }
+.flow-svg { width:100%; min-height:400px; }
+
+.contracts-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:24px; margin-bottom:40px; }
+.contract-card { background:var(--bg-surface); border:2px solid var(--border); border-radius:16px; padding:24px; transition:all 0.3s; position:relative; overflow:hidden; }
+.contract-card::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background:linear-gradient(90deg,var(--blue),var(--cyan)); }
+.contract-card:nth-child(2)::before { background:linear-gradient(90deg,var(--green),var(--amber)); }
+.contract-card:nth-child(3)::before { background:linear-gradient(90deg,var(--purple),var(--pink)); }
+.contract-card:nth-child(4)::before { background:linear-gradient(90deg,var(--cyan),var(--blue)); }
+.contract-card:nth-child(5)::before { background:linear-gradient(90deg,var(--amber),var(--red)); }
+.contract-card:hover { border-color:var(--border-bright); box-shadow:0 8px 32px rgba(0,230,118,0.1); }
+
+.contract-icon { font-size:40px; margin-bottom:12px; }
+.contract-name { font-size:18px; font-weight:700; margin-bottom:6px; color:var(--text-1); }
+.contract-ticker { font-family:var(--font-mono); font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px; }
+.contract-desc { font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:20px; }
+.contract-type { display:inline-block; padding:4px 12px; background:var(--blue-dim); color:var(--blue); border-radius:20px; font-family:var(--font-mono); font-size:10px; margin-bottom:16px; border:1px solid rgba(68,136,255,0.3); }
+
+.features-list { list-style:none; margin-bottom:16px; }
+.features-list li { padding:6px 0; font-size:12px; color:var(--text-2); padding-left:20px; position:relative; }
+.features-list li:before { content:'▸'; position:absolute; left:0; color:var(--green); }
+
+.contract-metrics { background:var(--bg-surface-2); border-radius:12px; padding:16px; margin-top:16px; }
+.metric-pair { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:12px; }
+.metric-pair:last-child { border-bottom:none; }
+.metric-label { color:var(--text-3); }
+.metric-val { font-family:var(--font-mono); font-weight:600; color:var(--text-1); }
+
+.flow-step { display:flex; align-items:center; gap:16px; margin-bottom:24px; }
+.flow-number { width:40px; height:40px; background:var(--green); color:#000; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; }
+.flow-content { flex:1; background:var(--bg-surface-2); border:1px solid var(--border); border-radius:12px; padding:16px; }
+.flow-title { font-weight:700; margin-bottom:6px; }
+.flow-desc { font-size:13px; color:var(--text-2); }
+
+.cost-breakdown { background:var(--bg-surface); border:1px solid var(--border); border-radius:20px; padding:28px; margin-bottom:40px; }
+.cost-title { font-size:20px; font-weight:700; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid var(--border); }
+
+.cost-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px; margin-bottom:24px; }
+.cost-card { background:var(--bg-surface-2); border:1px solid var(--border); border-radius:14px; padding:16px; text-align:center; }
+.cost-label { font-family:var(--font-mono); font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+.cost-amount { font-size:28px; font-weight:700; font-family:var(--font-mono); color:var(--green); margin-bottom:4px; }
+.cost-sub { font-size:11px; color:var(--text-3); }
+
+.interaction-matrix { width:100%; border-collapse:collapse; font-size:12px; background:var(--bg-surface-2); border-radius:12px; overflow:hidden; margin-top:20px; }
+.interaction-matrix th { background:var(--bg-surface-3); padding:12px; text-align:left; font-family:var(--font-mono); font-size:11px; letter-spacing:1px; color:var(--text-3); border-bottom:1px solid var(--border); font-weight:600; }
+.interaction-matrix td { padding:12px; border-bottom:1px solid var(--border); }
+.interaction-matrix tr:last-child td { border-bottom:none; }
+.interaction-matrix .contract-from { color:var(--cyan); font-weight:600; }
+.interaction-matrix .contract-to { color:var(--green); font-weight:600; }
+.interaction-matrix .interaction-type { color:var(--amber); font-family:var(--font-mono); }
+.interaction-matrix .gas-cost { color:var(--text-1); font-family:var(--font-mono); }
+
+.timeline { position:relative; margin-top:40px; }
+.timeline-item { margin-bottom:32px; padding-left:40px; position:relative; }
+.timeline-item::before { content:''; position:absolute; left:6px; top:0; width:2px; height:calc(100% + 32px); background:var(--border); }
+.timeline-item:last-child::before { display:none; }
+.timeline-item::after { content:''; position:absolute; left:0; top:6px; width:16px; height:16px; background:var(--green); border-radius:50%; border:3px solid var(--bg-base); }
+.timeline-item.phase-2::after { background:var(--amber); }
+.timeline-item.phase-3::after { background:var(--blue); }
+
+.timeline-phase { font-family:var(--font-mono); font-size:11px; color:var(--text-3); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+.timeline-title { font-size:16px; font-weight:700; margin-bottom:8px; }
+.timeline-desc { font-size:13px; color:var(--text-2); }
+
+.badge { display:inline-block; padding:4px 12px; border-radius:20px; font-family:var(--font-mono); font-size:10px; font-weight:600; letter-spacing:0.5px; }
+.badge-erc20 { background:rgba(0,188,212,0.12); color:var(--cyan); border:1px solid rgba(0,188,212,0.3); }
+.badge-erc3643 { background:rgba(255,77,77,0.12); color:var(--red); border:1px solid rgba(255,77,77,0.3); }
+.badge-erc1155 { background:var(--green-dim); color:var(--green); border:1px solid rgba(0,230,118,0.3); }
+.badge-erc4626 { background:rgba(170,119,255,0.12); color:var(--purple); border:1px solid rgba(170,119,255,0.3); }
+.badge-erc721 { background:var(--amber-dim); color:var(--amber); border:1px solid rgba(255,179,0,0.3); }
+
+@media (max-width:1200px) {
+  .contracts-grid { grid-template-columns:1fr; }
+}
+
+@media (max-width:768px) {
+  .page { padding:20px; }
+  .header-inner { padding:16px 20px; }
+  .contract-flow { padding:20px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo-text">⛓️ DeAgro Simulator</div>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span class="status-text">MODO SIMULAÇÃO ATIVA</span>
+    </div>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="nav-inner">
+   
+    <button class="nav-btn" onclick="switchTab('arquitetura-core')">🏗️ DeAgro Core</button>
+    
+  </div>
+</nav>
+
+<main class="page">
+
+<!-- ========================= DEAGRO CORE ARCHITECTURE ========================= -->
+<div id="tab-arquitetura-core" class="tab-pane">
+  <div class="page-header">
+    <div class="page-title">🏗️ DeAgro Core Architecture</div>
+    <div class="page-sub">Arquitetura completa da plataforma com contratos inteligentes, fluxos de dados e custos operacionais</div>
+  </div>
+
+  <div class="architecture-intro">
+    <div class="intro-title">O Núcleo da Plataforma DeAgro</div>
+    <div class="intro-text">
+      DeAgro Core é o orquestrador central da plataforma, coordenando todos os módulos de tokens, compliance, ativos agrícolas, vaults de investimento, marketplace e staking. A arquitetura é modular, permitindo escalabilidade sem comprometer segurança ou eficiência de custos.
+    </div>
+    <div class="intro-highlight">
+      ⚡ <strong>Design Modular:</strong> Cada contrato é independente mas sincronizado pelo Core, permitindo atualizações sem migração de dados.
+    </div>
+  </div>
+
+  <!-- ARQUITETURA VISUAL -->
+  <div class="contract-flow">
+    <h3 style="margin-bottom:28px;font-size:18px;font-weight:700">Fluxo de Arquitetura Integrada</h3>
+    <svg class="flow-svg" viewBox="0 0 1200 450" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#00bcd4;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#0052FF;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#00e676;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#ffb300;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#aa77ff;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#00bcd4;stop-opacity:1" />
+        </linearGradient>
+        <marker id="arrowgreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="#00e676" />
+        </marker>
+      </defs>
+      
+      <!-- CORE CENTER -->
+      <rect x="475" y="180" width="250" height="90" rx="12" fill="url(#grad1)" opacity="0.2" stroke="#00bcd4" stroke-width="2"/>
+      <text x="600" y="205" text-anchor="middle" font-size="18" font-weight="bold" fill="#00bcd4">DeAgro Core</text>
+      <text x="600" y="225" text-anchor="middle" font-size="12" fill="#00bcd4">Orchestrator Layer</text>
+      <text x="600" y="245" text-anchor="middle" font-size="11" fill="#8899aa">Governs all modules</text>
+      
+      <!-- LAYER 1: TOKENS -->
+      <g id="token-layer">
+        <rect x="30" y="30" width="140" height="80" rx="8" fill="#00bcd4" opacity="0.15" stroke="#00bcd4" stroke-width="1.5"/>
+        <text x="100" y="50" text-anchor="middle" font-size="14" font-weight="bold" fill="#00bcd4">AGX Token</text>
+        <text x="100" y="67" text-anchor="middle" font-size="10" fill="#00bcd4">ERC-20</text>
+        <text x="100" y="80" text-anchor="middle" font-size="9" fill="#8899aa">Public · Governance</text>
+        
+        <rect x="205" y="30" width="140" height="80" rx="8" fill="#ff4d4d" opacity="0.15" stroke="#ff4d4d" stroke-width="1.5"/>
+        <text x="275" y="50" text-anchor="middle" font-size="14" font-weight="bold" fill="#ff4d4d">AGXA Token</text>
+        <text x="275" y="67" text-anchor="middle" font-size="10" fill="#ff4d4d">ERC-3643</text>
+        <text x="275" y="80" text-anchor="middle" font-size="9" fill="#8899aa">KYC · Compliance</text>
+      </g>
+      
+      <!-- ARROWS FROM TOKENS TO CORE -->
+      <line x1="100" y1="110" x2="550" y2="180" stroke="#00e676" stroke-width="2" marker-end="url(#arrowgreen)" stroke-dasharray="5,5"/>
+      <line x1="275" y1="110" x2="600" y2="180" stroke="#00e676" stroke-width="2" marker-end="url(#arrowgreen)" stroke-dasharray="5,5"/>
+      
+      <!-- LAYER 2: ASSETS & COMPLIANCE -->
+      <g id="asset-layer">
+        <rect x="380" y="30" width="140" height="80" rx="8" fill="#00e676" opacity="0.15" stroke="#00e676" stroke-width="1.5"/>
+        <text x="450" y="50" text-anchor="middle" font-size="14" font-weight="bold" fill="#00e676">ERC-1155</text>
+        <text x="450" y="67" text-anchor="middle" font-size="10" fill="#00e676">Agro Assets</text>
+        <text x="450" y="80" text-anchor="middle" font-size="9" fill="#8899aa">Café · Soja · Milho</text>
+      </g>
+      <line x1="450" y1="110" x2="550" y2="180" stroke="#00e676" stroke-width="2" marker-end="url(#arrowgreen)" stroke-dasharray="5,5"/>
+      
+      <!-- LAYER 3: VAULTS & MARKETPLACE -->
+      <g id="service-layer">
+        <rect x="760" y="30" width="140" height="80" rx="8" fill="#aa77ff" opacity="0.15" stroke="#aa77ff" stroke-width="1.5"/>
+        <text x="830" y="50" text-anchor="middle" font-size="14" font-weight="bold" fill="#aa77ff">ERC-4626</text>
+        <text x="830" y="67" text-anchor="middle" font-size="10" fill="#aa77ff">Vaults</text>
+        <text x="830" y="80" text-anchor="middle" font-size="9" fill="#8899aa">Investment Pools</text>
+        
+        <rect x="935" y="30" width="140" height="80" rx="8" fill="#ffb300" opacity="0.15" stroke="#ffb300" stroke-width="1.5"/>
+        <text x="1005" y="50" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffb300">ERC-721</text>
+        <text x="1005" y="67" text-anchor="middle" font-size="10" fill="#ffb300">NFT/Certs</text>
+        <text x="1005" y="80" text-anchor="middle" font-size="9" fill="#8899aa">Certificates</text>
+      </g>
+      <line x1="830" y1="110" x2="650" y2="180" stroke="#00e676" stroke-width="2" marker-end="url(#arrowgreen)" stroke-dasharray="5,5"/>
+      <line x1="1005" y1="110" x2="700" y2="180" stroke="#00e676" stroke-width="2" marker-end="url(#arrowgreen)" stroke-dasharray="5,5"/>
+      
+      <!-- LAYER 4: OPERATIONS -->
+      <g id="ops-layer">
+        <rect x="30" y="310" width="140" height="100" rx="8" fill="#0052FF" opacity="0.15" stroke="#0052FF" stroke-width="1.5"/>
+        <text x="100" y="335" text-anchor="middle" font-size="13" font-weight="bold" fill="#0052FF">Marketplace</text>
+        <text x="100" y="355" text-anchor="middle" font-size="10" fill="#8899aa">Trading · Liquidity</text>
+        <text x="100" y="375" text-anchor="middle" font-size="10" fill="#8899aa">Order Book</text>
+        
+        <rect x="210" y="310" width="140" height="100" rx="8" fill="#0052FF" opacity="0.15" stroke="#0052FF" stroke-width="1.5"/>
+        <text x="280" y="335" text-anchor="middle" font-size="13" font-weight="bold" fill="#0052FF">Staking</text>
+        <text x="280" y="355" text-anchor="middle" font-size="10" fill="#8899aa">Rewards Distribution</text>
+        <text x="280" y="375" text-anchor="middle" font-size="10" fill="#8899aa">Lock Periods</text>
+        
+        <rect x="390" y="310" width="140" height="100" rx="8" fill="#0052FF" opacity="0.15" stroke="#0052FF" stroke-width="1.5"/>
+        <text x="460" y="335" text-anchor="middle" font-size="13" font-weight="bold" fill="#0052FF">Treasury</text>
+        <text x="460" y="355" text-anchor="middle" font-size="10" fill="#8899aa">Fund Management</text>
+        <text x="460" y="375" text-anchor="middle" font-size="10" fill="#8899aa">DAO Governance</text>
+        
+        <rect x="570" y="310" width="140" height="100" rx="8" fill="#0052FF" opacity="0.15" stroke="#0052FF" stroke-width="1.5"/>
+        <text x="640" y="335" text-anchor="middle" font-size="13" font-weight="bold" fill="#0052FF">Runtime</text>
+        <text x="640" y="355" text-anchor="middle" font-size="10" fill="#8899aa">State Management</text>
+        <text x="640" y="375" text-anchor="middle" font-size="10" fill="#8899aa">Data Sync</text>
+      </g>
+      
+      <!-- ARROWS FROM CORE TO OPERATIONS -->
+      <line x1="520" y1="270" x2="100" y2="310" stroke="#aa77ff" stroke-width="2" marker-end="url(#arrowgreen)"/>
+      <line x1="550" y1="270" x2="280" y2="310" stroke="#aa77ff" stroke-width="2" marker-end="url(#arrowgreen)"/>
+      <line x1="600" y1="270" x2="460" y2="310" stroke="#aa77ff" stroke-width="2" marker-end="url(#arrowgreen)"/>
+      <line x1="650" y1="270" x2="640" y2="310" stroke="#aa77ff" stroke-width="2" marker-end="url(#arrowgreen)"/>
+    </svg>
+  </div>
+
+  <!-- CONTRATOS DETALHADOS -->
+  <div>
+    <h3 style="margin-bottom:24px;font-size:20px;font-weight:700">Contratos Inteligentes Detalhados</h3>
+    
+    <div class="contracts-grid">
+      <!-- AGX TOKEN -->
+      <div class="contract-card">
+        <div class="contract-icon">💰</div>
+        <div class="contract-name">AGX Token</div>
+        <div class="contract-ticker">AGX</div>
+        <span class="contract-type">ERC-20 · Public</span>
+        <div class="contract-desc">
+          Token de governança pública da plataforma. Usado para votação em decisões estratégicas, distribuição de prêmios e incentivos.
+        </div>
+        <ul class="features-list">
+          <li>Governança DAO</li>
+          <li>Staking e Rewards</li>
+          <li>Liquidez DEX</li>
+          <li>Transferências ilimitadas</li>
+        </ul>
+        <div class="contract-metrics">
+          <div class="metric-pair">
+            <span class="metric-label">Deploy Cost (L2)</span>
+            <span class="metric-val" id="cost-agx-deploy">$0.82</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Tx Transfer (L2)</span>
+            <span class="metric-val" id="cost-agx-transfer">$0.0008</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Gas (Mint)</span>
+            <span class="metric-val">65K</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGXA TOKEN -->
+      <div class="contract-card">
+        <div class="contract-icon">🔐</div>
+        <div class="contract-name">AGXA Token</div>
+        <div class="contract-ticker">AGXA</div>
+        <span class="contract-type">ERC-3643 · Regulated</span>
+        <div class="contract-desc">
+          Token com conformidade regulatória KYC/AML integrado. Apenas investidores verificados podem possuir. Ideal para tokenização de valores mobiliários.
+        </div>
+        <ul class="features-list">
+          <li>KYC/AML on-chain</li>
+          <li>Whitelist de investidores</li>
+          <li>Restrições geográficas</li>
+          <li>Transferências controladas</li>
+        </ul>
+        <div class="contract-metrics">
+          <div class="metric-pair">
+            <span class="metric-label">Deploy Cost (L2)</span>
+            <span class="metric-val" id="cost-agxa-deploy">$4.90</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Tx Transfer (L2)</span>
+            <span class="metric-val" id="cost-agxa-transfer">$0.0036</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Gas (Mint)</span>
+            <span class="metric-val">180K</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGRO ASSETS -->
+      <div class="contract-card">
+        <div class="contract-icon">🌾</div>
+        <div class="contract-name">Agro Assets</div>
+        <div class="contract-ticker">AGRO-1155</div>
+        <span class="contract-type">ERC-1155 · Fractionalized</span>
+        <div class="contract-desc">
+          Tokens setoriais representando ativos agrícolas fracionados: Café, Soja, Milho, Açúcar. Máxima eficiência de custo para ativos RWA.
+        </div>
+        <ul class="features-list">
+          <li>Múltiplos ativos em 1 contrato</li>
+          <li>Fracionamento ilimitado</li>
+          <li>Batch transfers (-68% custo)</li>
+          <li>Yield tracking automático</li>
+        </ul>
+        <div class="contract-metrics">
+          <div class="metric-pair">
+            <span class="metric-label">Deploy Cost (L2)</span>
+            <span class="metric-val" id="cost-agro-deploy">$0.28</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Tx Transfer (L2)</span>
+            <span class="metric-val" id="cost-agro-transfer">$0.0008</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Gas (Mint)</span>
+            <span class="metric-val">95K</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VAULTS -->
+      <div class="contract-card">
+        <div class="contract-icon">🏦</div>
+        <div class="contract-name">Investment Vaults</div>
+        <div class="contract-ticker">VAULT-4626</div>
+        <span class="contract-type">ERC-4626 · Yield</span>
+        <div class="contract-desc">
+          Vaults de investimento para pools de capital agregado. Distribuição automática de yields, staking de LP tokens e rebalanceamento.
+        </div>
+        <ul class="features-list">
+          <li>Composição de yields</li>
+          <li>Liquidez automática</li>
+          <li>Rebalanceamento programado</li>
+          <li>Auditorias on-chain</li>
+        </ul>
+        <div class="contract-metrics">
+          <div class="metric-pair">
+            <span class="metric-label">Deploy Cost (L2)</span>
+            <span class="metric-val" id="cost-vault-deploy">$0.48</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Tx Deposit (L2)</span>
+            <span class="metric-val" id="cost-vault-deposit">$0.0012</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Gas (Deploy)</span>
+            <span class="metric-val">3.2M</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- NFT CERTIFICATES -->
+      <div class="contract-card">
+        <div class="contract-icon">🎖️</div>
+        <div class="contract-name">NFT Certificates</div>
+        <div class="contract-ticker">CERT-721</div>
+        <span class="contract-type">ERC-721 · Unique Assets</span>
+        <div class="contract-desc">
+          Certificados únicos para rastreabilidade, proveniência e propriedade. Um NFT por ativo físico com metadados verificáveis.
+        </div>
+        <ul class="features-list">
+          <li>Rastreabilidade completa</li>
+          <li>Metadados imutáveis</li>
+          <li>Certificados de propriedade</li>
+          <li>Compatível com marketplaces</li>
+        </ul>
+        <div class="contract-metrics">
+          <div class="metric-pair">
+            <span class="metric-label">Deploy Cost (L2)</span>
+            <span class="metric-val" id="cost-nft-deploy">$0.40</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Tx Mint (L2)</span>
+            <span class="metric-val" id="cost-nft-mint">$0.0028</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Gas (Mint)</span>
+            <span class="metric-val">150K</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CORE CONTRACT -->
+      <div class="contract-card" style="border:2px solid var(--cyan);background:linear-gradient(135deg,var(--bg-surface),var(--bg-surface-2))">
+        <div class="contract-icon">⚙️</div>
+        <div class="contract-name">DeAgro Core</div>
+        <div class="contract-ticker">CORE</div>
+        <span class="contract-type">Core · Orchestrator</span>
+        <div class="contract-desc">
+          Contrato central que orquestra todos os módulos. Gerencia permissões, sincroniza estados e coordena transações cross-contract.
+        </div>
+        <ul class="features-list">
+          <li>Gerenciamento de permissões</li>
+          <li>Sincronização de estado</li>
+          <li>Validação de segurança</li>
+          <li>Auditoria centralizada</li>
+        </ul>
+        <div class="contract-metrics">
+          <div class="metric-pair">
+            <span class="metric-label">Deploy Cost (L2)</span>
+            <span class="metric-val" id="cost-core-deploy">$1.24</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Tx (Cross-contract)</span>
+            <span class="metric-val" id="cost-core-tx">$0.0045</span>
+          </div>
+          <div class="metric-pair">
+            <span class="metric-label">Gas (Complex)</span>
+            <span class="metric-val">400K+</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLUXO DE OPERAÇÕES -->
+  <div style="margin-top:40px">
+    <h3 style="margin-bottom:24px;font-size:20px;font-weight:700">Fluxo de Operações Principais</h3>
+    
+    <div class="flow-step">
+      <div class="flow-number">1</div>
+      <div class="flow-content">
+        <div class="flow-title">Investor Registration (via AGXA)</div>
+        <div class="flow-desc">Investidor passa por KYC/AML, recebe AGXA token e é adicionado à whitelist do Core. Pode agora investir em ativos regulados.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number">2</div>
+      <div class="flow-content">
+        <div class="flow-title">Asset Fractionalization (ERC-1155)</div>
+        <div class="flow-desc">Produtor deposita ativo agrícola real. Core gera tokens ERC-1155 representando frações. Tokens aparecem em marketplace.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number">3</div>
+      <div class="flow-content">
+        <div class="flow-title">Pool Creation (ERC-4626 Vault)</div>
+        <div class="flow-desc">Múltiplos investidores depositam em um Vault para ativo específico. Vault distribui automaticamente rendimentos semanais.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number">4</div>
+      <div class="flow-content">
+        <div class="flow-title">Trading & Liquidity (Marketplace)</div>
+        <div class="flow-desc">Investidores compram/vendem frações em marketplace. Liquidez mantida por AMM ou order book. Core sincroniza todos os trades.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number">5</div>
+      <div class="flow-content">
+        <div class="flow-title">Staking & Rewards (AGX)</div>
+        <div class="flow-desc">Investidores fazem staking de AGX tokens. Treasury distribui prêmios semanalmente via Core contract.</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-number">6</div>
+      <div class="flow-content">
+        <div class="flow-title">Certification (ERC-721 NFT)</div>
+        <div class="flow-desc">Quando ativo é colhido/entregue, NFT certificado é gerado. Rastreabilidade completa on-chain do início ao fim.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATRIZ DE INTERAÇÕES -->
+  <div class="cost-breakdown">
+    <div class="cost-title">📊 Matriz de Interações Entre Contratos</div>
+    <table class="interaction-matrix">
+      <thead>
+        <tr>
+          <th>De</th>
+          <th>Para</th>
+          <th>Tipo de Interação</th>
+          <th>Gas Estimado</th>
+          <th>Custo L2</th>
+          <th>Frequência</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="contract-from">AGXA</td>
+          <td class="contract-to">Core</td>
+          <td class="interaction-type">Verify KYC</td>
+          <td>145K</td>
+          <td id="int-cost-1">$0.0035</td>
+          <td>Por investidor</td>
+        </tr>
+        <tr>
+          <td class="contract-from">Core</td>
+          <td class="contract-to">AGRO-1155</td>
+          <td class="interaction-type">Mint Fractions</td>
+          <td>95K</td>
+          <td id="int-cost-2">$0.0023</td>
+          <td>Por ativo novo</td>
+        </tr>
+        <tr>
+          <td class="contract-from">AGRO-1155</td>
+          <td class="contract-to">VAULT-4626</td>
+          <td class="interaction-type">Deposit Asset</td>
+          <td>180K</td>
+          <td id="int-cost-3">$0.0043</td>
+          <td>Contínua</td>
+        </tr>
+        <tr>
+          <td class="contract-from">VAULT-4626</td>
+          <td class="contract-to">Core</td>
+          <td class="interaction-type">Distribute Yield</td>
+          <td>220K</td>
+          <td id="int-cost-4">$0.0053</td>
+          <td>Semanal</td>
+        </tr>
+        <tr>
+          <td class="contract-from">AGRO-1155</td>
+          <td class="contract-to">CERT-721</td>
+          <td class="interaction-type">Link to NFT</td>
+          <td>125K</td>
+          <td id="int-cost-5">$0.0030</td>
+          <td>Ao completar</td>
+        </tr>
+        <tr>
+          <td class="contract-from">AGX</td>
+          <td class="contract-to">Core</td>
+          <td class="interaction-type">Governance Vote</td>
+          <td>95K</td>
+          <td id="int-cost-6">$0.0023</td>
+          <td>Por proposta</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BREAKDOWN DE CUSTOS OPERACIONAIS -->
+  <div class="cost-breakdown">
+    <div class="cost-title">💰 Breakdown de Custos Operacionais (Mensal)</div>
+    
+    <div class="cost-grid">
+      <div class="cost-card">
+        <div class="cost-label">Deploy Inicial</div>
+        <div class="cost-amount" id="monthly-deploy">$8.12</div>
+        <div class="cost-sub">Todos os 6 contratos</div>
+      </div>
+
+      <div class="cost-card">
+        <div class="cost-label">KYC Verificação</div>
+        <div class="cost-amount" id="monthly-kyc">$0.14</div>
+        <div class="cost-sub">40 investidores/mês</div>
+      </div>
+
+      <div class="cost-card">
+        <div class="cost-label">Mint de Ativos</div>
+        <div class="cost-amount" id="monthly-mint">$0.23</div>
+        <div class="cost-sub">100 ativos/mês</div>
+      </div>
+
+      <div class="cost-card">
+        <div class="cost-label">Trading (Marketplace)</div>
+        <div class="cost-amount" id="monthly-trading">$0.48</div>
+        <div class="cost-sub">500 trades/mês</div>
+      </div>
+
+      <div class="cost-card">
+        <div class="cost-label">Yield Distribution</div>
+        <div class="cost-amount" id="monthly-yield">$0.53</div>
+        <div class="cost-sub">4 distribuições/mês</div>
+      </div>
+
+      <div class="cost-card">
+        <div class="cost-label">Staking Rewards</div>
+        <div class="cost-amount" id="monthly-staking">$0.46</div>
+        <div class="cost-sub">4 rounds/mês</div>
+      </div>
+
+      <div class="cost-card">
+        <div class="cost-label">NFT Certification</div>
+        <div class="cost-amount" id="monthly-nft">$0.28</div>
+        <div class="cost-sub">100 certificados/mês</div>
+      </div>
+
+      <div class="cost-card">
+        <div class="cost-label">Cross-Contract Calls</div>
+        <div class="cost-amount" id="monthly-cross">$0.36</div>
+        <div class="cost-sub">800 calls/mês</div>
+      </div>
+    </div>
+
+    <div style="background:var(--bg-surface-2);border-radius:12px;padding:20px;margin-top:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+        <div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Total Mensal Estimado</div>
+          <div style="font-size:32px;font-weight:700;color:var(--green)">$2.48</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:4px">Com otimizações L2 ativas</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Anualizado</div>
+          <div style="font-size:28px;font-weight:700;color:var(--cyan)">$29.76</div>
+          <div style="font-size:12px;color:var(--text-3);margin-top:4px">Para operação completa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div style="margin-top:40px">
+    <h3 style="margin-bottom:28px;font-size:20px;font-weight:700">Roadmap de Implementação</h3>
+    
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-phase">FASE 1 · SEMANAS 1-4</div>
+        <div class="timeline-title">Core Infrastructure Setup</div>
+        <div class="timeline-desc">
+          ✓ Deploy DeAgro Core | ✓ Deploy AGX Token (ERC-20) | ✓ Setup basic governance | ✓ L2 optimization (batching, compression)
+        </div>
+      </div>
+
+      <div class="timeline-item phase-2">
+        <div class="timeline-phase">FASE 2 · SEMANAS 5-8</div>
+        <div class="timeline-title">Compliance & Tokenization</div>
+        <div class="timeline-desc">
+          ✓ Deploy AGXA (ERC-3643) | ✓ Implement KYC/AML system | ✓ Deploy ERC-1155 (Agro Assets) | ✓ Beta testing com 50 investidores
+        </div>
+      </div>
+
+      <div class="timeline-item phase-3">
+        <div class="timeline-phase">FASE 3 · SEMANAS 9-12</div>
+        <div class="timeline-title">Yield & Marketplace</div>
+        <div class="timeline-desc">
+          ✓ Deploy ERC-4626 Vaults | ✓ Marketplace + Order Book | ✓ Deploy ERC-721 Certificates | ✓ Staking & Rewards system
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-phase">FASE 4 · SEMANAS 13+</div>
+        <div class="timeline-title">Scaling & Optimization</div>
+        <div class="timeline-desc">
+          ✓ L1 Settlement bridge | ✓ Multi-chain deployment | ✓ Advanced analytics | ✓ DAO governance full activation
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY METRICS -->
+  <div style="margin-top:40px;background:var(--bg-surface);border:1px solid var(--border);border-radius:20px;padding:28px">
+    <h3 style="margin-bottom:24px;font-size:18px;font-weight:700">📈 Métricas-Chave da Arquitetura</h3>
+    
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px">
+      <div style="background:var(--bg-surface-2);border:1px solid var(--border);border-radius:14px;padding:16px">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;margin-bottom:8px">Gas Efficiency</div>
+        <div style="font-size:24px;font-weight:700;color:var(--green);margin-bottom:4px">68%</div>
+        <div style="font-size:12px;color:var(--text-2)">Redução vs L1 direto</div>
+      </div>
+
+      <div style="background:var(--bg-surface-2);border:1px solid var(--border);border-radius:14px;padding:16px">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;margin-bottom:8px">Cost per Operation</div>
+        <div style="font-size:24px;font-weight:700;color:var(--blue);margin-bottom:4px">$0.0008</div>
+        <div style="font-size:12px;color:var(--text-2)">Custo médio (L2 otimizado)</div>
+      </div>
+
+      <div style="background:var(--bg-surface-2);border:1px solid var(--border);border-radius:14px;padding:16px">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;margin-bottom:8px">Scalability Factor</div>
+        <div style="font-size:24px;font-weight:700;color:var(--amber);margin-bottom:4px">1000x</div>
+        <div style="font-size:12px;color:var(--text-2)">Capacidade vs L1 puro</div>
+      </div>
+
+      <div style="background:var(--bg-surface-2);border:1px solid var(--border);border-radius:14px;padding:16px">
+        <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);text-transform:uppercase;margin-bottom:8px">Contracts Deployed</div>
+        <div style="font-size:24px;font-weight:700;color:var(--cyan);margin-bottom:4px">6</div>
+        <div style="font-size:12px;color:var(--text-2)">Core + Módulos especializados</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- PLACEHOLDER PARA OUTRAS ABAS (serão adicionadas depois) -->
+<div id="tab-parametros" class="tab-pane">
+  <div class="page-header">
+    <div class="page-title">Parâmetros do Simulador</div>
+  </div>
+  <p style="color:var(--text-3)">Conteúdo das abas anteriores...</p>
+</div>
+
+<div id="tab-blockchain" class="tab-pane">
+  <div class="page-header">
+    <div class="page-title">Análise Blockchain</div>
+  </div>
+  <p style="color:var(--text-3)">Conteúdo das abas anteriores...</p>
+</div>
+
+<div id="tab-tokens" class="tab-pane">
+  <div class="page-header">
+    <div class="page-title">Análise de Tokens</div>
+  </div>
+  <p style="color:var(--text-3)">Conteúdo das abas anteriores...</p>
+</div>
+
+<div id="tab-operacoes" class="tab-pane">
+  <div class="page-header">
+    <div class="page-title">Simulação de Operações</div>
+  </div>
+  <p style="color:var(--text-3)">Conteúdo das abas anteriores...</p>
+</div>
+
+<div id="tab-analise" class="tab-pane">
+  <div class="page-header">
+    <div class="page-title">Análise Financeira</div>
+  </div>
+  <p style="color:var(--text-3)">Conteúdo das abas anteriores...</p>
+</div>
+
+<div id="tab-export" class="tab-pane">
+  <div class="page-header">
+    <div class="page-title">Exportar Relatório</div>
+  </div>
+  <p style="color:var(--text-3)">Conteúdo das abas anteriores...</p>
+</div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:32px 40px;max-width:1600px;margin:0 auto;text-align:center;margin-top:60px;">
+  <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);letter-spacing:1px;">DeAgro Simulator v2.1 · Arquitetura Core & Contratos Inteligentes</div>
+  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-3);margin-top:8px;">Ethereum L1 + Coinbase Base L2 · Modular Smart Contract Architecture</div>
+</footer>
+
+<script>
+// ============================================================
+// NAVEGAÇÃO
+// ============================================================
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  
+  document.getElementById('tab-' + tabName).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ============================================================
+// CÁLCULOS DE CUSTOS (ao carregar a aba)
+// ============================================================
+
+function calculateArchitectureCosts() {
+  // Preços padrão em L2
+  const ETH_PRICE = 2400;
+  const GAS_L2 = 0.1; // Gwei
+  const costPerGas = (GAS_L2 / 1e9) * ETH_PRICE;
+
+  // ERC-20 (AGX)
+  const agxDeployGas = 1500000;
+  const agxTransferGas = 45000;
+  document.getElementById('cost-agx-deploy').textContent = '$' + (agxDeployGas * costPerGas).toFixed(2);
+  document.getElementById('cost-agx-transfer').textContent = '$' + (agxTransferGas * costPerGas).toFixed(4);
+
+  // ERC-3643 (AGXA)
+  const agxaDeployGas = 5000000;
+  const agxaTransferGas = 120000;
+  document.getElementById('cost-agxa-deploy').textContent = '$' + (agxaDeployGas * costPerGas).toFixed(2);
+  document.getElementById('cost-agxa-transfer').textContent = '$' + (agxaTransferGas * costPerGas).toFixed(4);
+
+  // ERC-1155 (Agro Assets)
+  const agroDeployGas = 2800000;
+  const agroTransferGas = 50000;
+  document.getElementById('cost-agro-deploy').textContent = '$' + (agroDeployGas * costPerGas).toFixed(2);
+  document.getElementById('cost-agro-transfer').textContent = '$' + (agroTransferGas * costPerGas).toFixed(4);
+
+  // ERC-4626 (Vaults)
+  const vaultDeployGas = 3200000;
+  const vaultDepositGas = 180000;
+  document.getElementById('cost-vault-deploy').textContent = '$' + (vaultDeployGas * costPerGas).toFixed(2);
+  document.getElementById('cost-vault-deposit').textContent = '$' + (vaultDepositGas * costPerGas).toFixed(4);
+
+  // ERC-721 (NFT)
+  const nftDeployGas = 2500000;
+  const nftMintGas = 150000;
+  document.getElementById('cost-nft-deploy').textContent = '$' + (nftDeployGas * costPerGas).toFixed(2);
+  document.getElementById('cost-nft-mint').textContent = '$' + (nftMintGas * costPerGas).toFixed(4);
+
+  // Core Contract
+  const coreDeployGas = 4000000;
+  const coreTxGas = 200000;
+  document.getElementById('cost-core-deploy').textContent = '$' + (coreDeployGas * costPerGas).toFixed(2);
+  document.getElementById('cost-core-tx').textContent = '$' + (coreTxGas * costPerGas).toFixed(4);
+
+  // Matriz de Interações
+  const gasValues = [145000, 95000, 180000, 220000, 125000, 95000];
+  const costIds = ['int-cost-1', 'int-cost-2', 'int-cost-3', 'int-cost-4', 'int-cost-5', 'int-cost-6'];
+  gasValues.forEach((gas, idx) => {
+    document.getElementById(costIds[idx]).textContent = '$' + (gas * costPerGas).toFixed(4);
+  });
+
+  // Custos Operacionais Mensais
+  const deployCost = (agxDeployGas + agxaDeployGas + agroDeployGas + vaultDeployGas + nftDeployGas + coreDeployGas) * costPerGas;
+  const kycCost = 40 * 145000 * costPerGas;
+  const mintCost = 100 * 95000 * costPerGas;
+  const tradingCost = 500 * 50000 * costPerGas;
+  const yieldCost = 4 * 220000 * costPerGas;
+  const stakingCost = 4 * 95000 * costPerGas;
+  const nftCost = 100 * 150000 * costPerGas;
+  const crossCost = 800 * 90000 * costPerGas;
+
+  document.getElementById('monthly-deploy').textContent = '$' + deployCost.toFixed(2);
+  document.getElementById('monthly-kyc').textContent = '$' + kycCost.toFixed(2);
+  document.getElementById('monthly-mint').textContent = '$' + mintCost.toFixed(2);
+  document.getElementById('monthly-trading').textContent = '$' + tradingCost.toFixed(2);
+  document.getElementById('monthly-yield').textContent = '$' + yieldCost.toFixed(2);
+  document.getElementById('monthly-staking').textContent = '$' + stakingCost.toFixed(2);
+  document.getElementById('monthly-nft').textContent = '$' + nftCost.toFixed(2);
+  document.getElementById('monthly-cross').textContent = '$' + crossCost.toFixed(2);
+}
+
+// Executar ao carregar
+window.addEventListener('load', calculateArchitectureCosts);
+</script>
+
+</body>
+</html>
